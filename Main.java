@@ -92,53 +92,6 @@ public class Main{
         }
         Collections.sort(Lista_Chegadas_Sorted);
 
-        while (Lista_Chegadas_Sorted.size() != 0) {
-                    
-            System.out.println("***** TEMPO " + Tempo_Atual + " *****");
-            
-            //____Chegada de Processo____
-            if (Lista_Chegadas_Sorted.get(0) == Tempo_Atual) {
-                //@@@@@@@ Gerar Evento de Chegada de Processo @@@@@@@
-                for (Processo p : Lista_Chegadas.get(Lista_Chegadas_Sorted.get(0))) {
-                    Fila_CPU.add(p);
-                }
-                Lista_Chegadas_Sorted.remove(0);
-            }
-
-            //____ Rodando Processo_____
-            if (Fila_CPU.size() != 0) {
-
-                // Se o processo continua
-                if(Fila_CPU.get(0).AtualizarProcesso()){
-                    System.out.println("Rodou: " + Fila_CPU.get(0));
-                }
-                //Se o processo finaliza
-                else{
-                    Fila_CPU.remove(0);
-                    //@@@@@@@ Gerar Evento de Finaliza @@@@@@@
-                }
-
-                //____Parada por IO ou Quantum____
-                if (Fila_CPU.get(0).conferirIO() || Quantum == Quantum_Limite) {
-                    Fila_CPU.add(Fila_CPU.get(0));
-                    Fila_CPU.remove(0);
-                    Quantum = -1;
-                }
-
-
-
-                
-            }else{
-                System.out.println("Rodou nada");
-            }
-
-            System.out.println("Fila");;
-            for (Processo p : Fila_CPU) {
-                System.out.println(p);
-            }
-            Tempo_Atual++;
-            Quantum++;
-        }
     }
 
 
