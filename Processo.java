@@ -46,6 +46,9 @@ public class Processo {
         }
     };
 
+    public int getTempo_atual() {
+        return duracao - tempo_atual;
+    }
     @Override
     public String toString() {
         return nome;

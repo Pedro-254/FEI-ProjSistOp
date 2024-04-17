@@ -70,6 +70,25 @@ public class Main{
         return ListaChegadas;
     }
 
+    public static List<Processo> AddFila(int tempo, Map<Integer, List<Processo>> Lista_Chegadas) {
+        List<Processo> Chegou = new ArrayList<>();
+        
+        if (Lista_Chegadas.containsKey(tempo)) {
+            Chegou = Lista_Chegadas.get(tempo);
+
+        }else{
+            Chegou = new ArrayList<>();
+        }
+
+        return Chegou;
+    }
+
+    // a função só printa o evento
+    // pensei em fazer um for para printar a lista de eventos
+    public static void Evento(String evento){
+        System.out.println("#[evento] "+ evento);
+    }
+
     public static void main(String[] args) {
         //_____Variaveis_____
         int Quantum = 0;
@@ -78,7 +97,7 @@ public class Main{
         List<Processo> Fila_CPU = new ArrayList<>();
         List<Processo> Lista_Processos = new ArrayList<>();
         Map<Integer, List<Processo>> Lista_Chegadas = new HashMap<>();
-        
+        List<String> Lista_Eventos = new ArrayList<>();
         //___ Leitura de Arquivo e Geração de Processos
         Lista_Processos = LeitorArquivo("./Teste.txt");
 
@@ -91,6 +110,15 @@ public class Main{
             Lista_Chegadas_Sorted.add(chave);
         }
         Collections.sort(Lista_Chegadas_Sorted);
+        System.out.println(Fila_CPU.size());
+        Fila_CPU = AddFila(Tempo_Atual, Lista_Chegadas);
+
+        System.out.println("fila: "+Fila_CPU);
+        Processo cpu = Fila_CPU.get(0);
+        Fila_CPU.remove(0);
+        Evento("CHEGADA <" +Fila_CPU.get(0)+ ">" );
+        System.out.println("FILA: "+Fila_CPU);
+        System.out.println("CPU: "+cpu+"("+cpu.getTempo_atual()+")");
 
     }
 
