@@ -139,6 +139,12 @@ public class Main{
                 rodando = false;
             }
 
+            try {
+                Thread.sleep(2000);
+            } catch (InterruptedException e) {
+                e.printStackTrace();
+            }
+
         }
         //falta rodar pra testar muchoo medo
         
@@ -192,15 +198,19 @@ public class Main{
         }
         Collections.sort(Lista_Chegadas_Sorted);
         System.out.println(Fila_CPU.size());
+        
         Fila_CPU = AddFila(Tempo_Atual, Lista_Chegadas);
 
         System.out.println("fila: "+Fila_CPU);
         PrintarFila(Fila_CPU);
         Processo cpu = Fila_CPU.get(0);
         Fila_CPU.remove(0);
-        Evento("CHEGADA <" +Fila_CPU.get(0)+ ">" );
-        System.out.println("FILA: "+Fila_CPU);
-        System.out.println("CPU: "+cpu+"("+cpu.getTempo_atual()+")");
+        Lista_Chegadas.remove(Tempo_Atual);
+        RoundRobin(Quantum, Quantum_Limite, Lista_Chegadas, Fila_CPU, cpu);
+
+        // Evento("CHEGADA <" +Fila_CPU.get(0)+ ">" );
+        // System.out.println("FILA: "+Fila_CPU);
+        // System.out.println("CPU: "+cpu+"("+cpu.getTempo_atual()+")");
 
     }
 
