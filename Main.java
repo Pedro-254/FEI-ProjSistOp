@@ -83,6 +83,87 @@ public class Main{
         return Chegou;
     }
 
+    public static void RoundRobin(int Quantum, int Quantum_Limite, Map<Integer, List<Processo> > DicProcess, List<Processo> Fila_CPU, Processo CPU){
+        boolean estadoCPU, IOCPU;
+        boolean rodando = true;
+        int tempo_atual = 0;
+        while(rodando){
+            estadoCPU = CPU.AtualizarProcesso();
+            IOCPU = CPU.conferirIO();
+            System.out.println("********** TEMPO "+tempo_atual+" **************");
+            tempo_atual++;
+            if (Quantum == Quantum_Limite || !estadoCPU || IOCPU) {
+                //troca de processo ( quando o quantum acabar ou processo finalizar ou IO)
+                if(Fila_CPU.size() != 0){
+                    //fila contem processos e troca
+                    Fila_CPU.add(CPU);
+                    CPU = Fila_CPU.get(0);
+                }  
+            }
+
+            if(!estadoCPU){
+                //processo finalizado
+                Evento("ENCERRANDO <"+CPU+">");
+                Fila_CPU.remove(Fila_CPU.size()-1);
+                Quantum = 0;
+            }
+            if(IOCPU){
+                //processo com IO
+                Evento("IO <"+CPU+">");
+                Quantum = 0;
+            }
+
+            if(DicProcess.containsKey(tempo_atual)){
+                //chegada de processo
+                for (Processo p : DicProcess.get(tempo_atual)) {
+                    Fila_CPU.add(p);
+                    Evento("CHEGADA <"+p+">");
+                }
+                DicProcess.remove(tempo_atual);
+            }
+
+            if (Quantum == Quantum_Limite) {
+                Evento("FIM QUANTUM <"+CPU+">");
+                Quantum = 0;                
+            }else{
+                Quantum++;
+            }
+          
+            PrintarFila(Fila_CPU);
+            System.out.println("CPU: "+CPU+"("+CPU.getTempo_atual()+")");
+            if(Fila_CPU.size() == 0 && DicProcess.size() == 0 && !estadoCPU){
+                //fila vazia + processos vazios + CPU finalizada
+                System.err.println("-----------------------------------");
+                System.err.println("------- Encerrando simulacao ------");
+                System.err.println("-----------------------------------");
+                rodando = false;
+            }
+
+        }
+        //falta rodar pra testar muchoo medo
+        
+    }
+
+    public static void PrintarCPU(Processo CPU){
+        if(CPU == null){
+            System.out.println("ACABARAM OS PROCESSOS!!!");
+        }else{
+            System.out.println("CPU: "+CPU+"("+CPU.getTempo_atual()+")");
+        }        
+    }
+
+    public static void PrintarFila(List<Processo> Fila){
+        System.out.print("FILA: ");
+        if(Fila.size() == 0){
+            System.out.print("Não há processos na fila");
+        }else{
+            for (Processo processo : Fila) {
+                System.out.print(processo+"("+processo.getTempo_atual()+") ");
+            }
+        }
+        System.out.println();
+    }
+
     // a função só printa o evento
     // pensei em fazer um for para printar a lista de eventos
     public static void Evento(String evento){
@@ -114,6 +195,7 @@ public class Main{
         Fila_CPU = AddFila(Tempo_Atual, Lista_Chegadas);
 
         System.out.println("fila: "+Fila_CPU);
+        PrintarFila(Fila_CPU);
         Processo cpu = Fila_CPU.get(0);
         Fila_CPU.remove(0);
         Evento("CHEGADA <" +Fila_CPU.get(0)+ ">" );
