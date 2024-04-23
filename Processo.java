@@ -20,9 +20,16 @@ public class Processo {
     //Confere se existe pausa IO e 
     //caso exista remove essa pausa e retorna true
     public boolean conferirIO(){
+        System.out.println(Lista_IO);
         if (Lista_IO.get(0) != null) {
             if (tempo_atual == Lista_IO.get(0)) {
                 Lista_IO.remove(0);
+
+                //Se a lista esvaziar add valor NULL
+                if (Lista_IO.size() == 0) {
+                    Lista_IO.add(null);
+                }
+
                 return true;
             }
             else{
