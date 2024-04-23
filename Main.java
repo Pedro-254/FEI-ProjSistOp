@@ -75,7 +75,6 @@ public class Main{
         
         if (Lista_Chegadas.containsKey(tempo)) {
             Chegou = Lista_Chegadas.get(tempo);
-
         }else{
             Chegou = new ArrayList<>();
         }
@@ -83,36 +82,17 @@ public class Main{
         return Chegou;
     }
 
-    public static void RoundRobin(int Quantum, int Quantum_Limite, Map<Integer, List<Processo> > DicProcess, List<Processo> Fila_CPU, Processo CPU){
-        boolean estadoCPU, IOCPU;
+    public static void RoundRobin(int Quantum, int Quantum_Limite, Map<Integer, List<Processo> > DicProcess, List<Processo> Fila_CPU){
+        boolean estadoCPU=true;
+        boolean IOCPU=false;
         boolean rodando = true;
         int tempo_atual = 0;
+        Processo CPU = Fila_CPU.get(0);
+        Fila_CPU.remove(0);
+
         while(rodando){
-            estadoCPU = CPU.AtualizarProcesso();
-            IOCPU = CPU.conferirIO();
             System.out.println("********** TEMPO "+tempo_atual+" **************");
-            tempo_atual++;
-            if (Quantum == Quantum_Limite || !estadoCPU || IOCPU) {
-                //troca de processo ( quando o quantum acabar ou processo finalizar ou IO)
-                if(Fila_CPU.size() != 0){
-                    //fila contem processos e troca
-                    Fila_CPU.add(CPU);
-                    CPU = Fila_CPU.get(0);
-                }  
-            }
-
-            if(!estadoCPU){
-                //processo finalizado
-                Evento("ENCERRANDO <"+CPU+">");
-                Fila_CPU.remove(Fila_CPU.size()-1);
-                Quantum = 0;
-            }
-            if(IOCPU){
-                //processo com IO
-                Evento("IO <"+CPU+">");
-                Quantum = 0;
-            }
-
+            System.out.println("Quantum: "+Quantum);
             if(DicProcess.containsKey(tempo_atual)){
                 //chegada de processo
                 for (Processo p : DicProcess.get(tempo_atual)) {
@@ -121,26 +101,64 @@ public class Main{
                 }
                 DicProcess.remove(tempo_atual);
             }
+            if (Quantum == Quantum_Limite || !estadoCPU || IOCPU) {
+                //troca de processo ( quando o quantum acabar ou processo finalizar ou IO)
 
-            if (Quantum == Quantum_Limite) {
-                Evento("FIM QUANTUM <"+CPU+">");
-                Quantum = 0;                
+                if(!estadoCPU){
+                    //processo finalizado
+                    Evento("ENCERRANDO <"+CPU+">");
+
+                }
+                if(IOCPU){
+                    //processo com IO
+                    Evento("IO <"+CPU+">");
+                    Fila_CPU.add(CPU);
+                }
+                else{
+                    //fim do quantum
+                    if(estadoCPU){
+                        Evento("FIM QUANTUM <"+CPU+">");
+                        Fila_CPU.add(CPU);
+                    }
+                    Quantum = 0;
+                }
+                
+                if(Fila_CPU.size() != 0){
+                    //fila contem processos e troca de processo
+                    CPU = Fila_CPU.get(0);
+                    Fila_CPU.remove(0);
+                }else{
+                    //fila vazia
+                    if(!estadoCPU){
+                        //CPU com processo
+                        CPU = null;
+                    }
+                }
             }else{
+                //continua com o mesmo processo
                 Quantum++;
             }
-          
+            
             PrintarFila(Fila_CPU);
-            System.out.println("CPU: "+CPU+"("+CPU.getTempo_atual()+")");
-            if(Fila_CPU.size() == 0 && DicProcess.size() == 0 && !estadoCPU){
+            PrintarCPU(CPU);
+            
+            
+            tempo_atual++;
+            if (CPU != null) {
+                estadoCPU = CPU.AtualizarProcesso();
+                IOCPU = CPU.conferirIO();
+            }
+
+            if(Fila_CPU.size() == 0 && DicProcess.size() == 0 && CPU==null){
                 //fila vazia + processos vazios + CPU finalizada
                 System.err.println("-----------------------------------");
                 System.err.println("------- Encerrando simulacao ------");
                 System.err.println("-----------------------------------");
                 rodando = false;
             }
-
+            
             try {
-                Thread.sleep(2000);
+                Thread.sleep(1000);
             } catch (InterruptedException e) {
                 e.printStackTrace();
             }
@@ -186,7 +204,7 @@ public class Main{
         Map<Integer, List<Processo>> Lista_Chegadas = new HashMap<>();
         List<String> Lista_Eventos = new ArrayList<>();
         //___ Leitura de Arquivo e Geração de Processos
-        Lista_Processos = LeitorArquivo("./Teste.txt");
+        Lista_Processos = LeitorArquivo("./arquivo1.txt");
 
         //___ Gerando Lista de Chegadas ____
         Lista_Chegadas = GerarListaChegadas(Lista_Processos);
@@ -201,12 +219,9 @@ public class Main{
         
         Fila_CPU = AddFila(Tempo_Atual, Lista_Chegadas);
 
-        System.out.println("fila: "+Fila_CPU);
-        PrintarFila(Fila_CPU);
-        Processo cpu = Fila_CPU.get(0);
-        Fila_CPU.remove(0);
         Lista_Chegadas.remove(Tempo_Atual);
-        RoundRobin(Quantum, Quantum_Limite, Lista_Chegadas, Fila_CPU, cpu);
+
+        RoundRobin(Quantum, Quantum_Limite, Lista_Chegadas, Fila_CPU);
 
         // Evento("CHEGADA <" +Fila_CPU.get(0)+ ">" );
         // System.out.println("FILA: "+Fila_CPU);
