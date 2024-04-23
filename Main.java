@@ -86,7 +86,6 @@ public class Main{
         boolean rodando = true;
         int tempo_atual = 0;
         Processo CPU = null;
-        Fila_CPU.remove(0);
         List<Processo> Chegadas = new ArrayList<>();
         List<String> Eventos = new ArrayList<>();
 
@@ -227,7 +226,7 @@ public class Main{
         Map<Integer, List<Processo>> Lista_Chegadas = new HashMap<>();
 
         //___ Leitura de Arquivo e Geração de Processos
-        Lista_Processos = LeitorArquivo("./teste.txt");
+        Lista_Processos = LeitorArquivo("./Teste.txt");
 
         //___ Gerando Lista de Chegadas ____
         Lista_Chegadas = GerarListaChegadas(Lista_Processos);
