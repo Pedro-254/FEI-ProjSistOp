@@ -85,12 +85,11 @@ public class Main{
     public static void RoundRobin(int Quantum, int Quantum_Limite, Map<Integer, List<Processo> > DicProcess, List<Processo> Fila_CPU){
         boolean estadoCPU=true;
         boolean IOCPU=false;
-        boolean rodando = true;
         int tempo_atual = 0;
         Processo CPU = Fila_CPU.get(0);
         Fila_CPU.remove(0);
 
-        while(rodando){
+        while(true){
             System.out.println("********** TEMPO "+tempo_atual+" **************");
             System.out.println("Quantum: "+Quantum);
             if(DicProcess.containsKey(tempo_atual)){
@@ -142,29 +141,29 @@ public class Main{
             PrintarFila(Fila_CPU);
             PrintarCPU(CPU);
             
-            
-            tempo_atual++;
             if (CPU != null) {
                 estadoCPU = CPU.AtualizarProcesso();
                 IOCPU = CPU.conferirIO();
             }
-
+            
             if(Fila_CPU.size() == 0 && DicProcess.size() == 0 && CPU==null){
                 //fila vazia + processos vazios + CPU finalizada
-                System.err.println("-----------------------------------");
-                System.err.println("------- Encerrando simulacao ------");
-                System.err.println("-----------------------------------");
-                rodando = false;
+                break;
             }
             
+            tempo_atual++;
+
             try {
                 Thread.sleep(1000);
             } catch (InterruptedException e) {
                 e.printStackTrace();
             }
-
+            
         }
-        //falta rodar pra testar muchoo medo
+        System.err.println("-----------------------------------");
+        System.err.println("------- Encerrando simulacao ------");
+        System.err.println("-----------------------------------");
+        //testar io
         
     }
 
