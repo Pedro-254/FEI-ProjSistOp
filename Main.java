@@ -16,6 +16,9 @@ public class Main{
     static String cores = "\033[0;40m \033[0;41m \033[0;42m \033[0;43m \033[0;44m \033[0;45m \033[0;46m \033[0;47m \033[1;40m \033[1;41m \033[1;42m \033[1;43m \033[1;44m \033[1;45m \033[1;46m \033[1;47m";
     static List<String> listacor = List.of(cores.split(" "));
     static String cornull = "\033[0m";
+    static String tempdiag = "| ";
+    static String diagrama = "| ";
+    static String txtdiagrama = "| ";
 
     public static ArrayList<Processo> LeitorArquivo(String CaminhoArquivo){
         ArrayList<Processo> Lista = new ArrayList<>();
@@ -83,30 +86,36 @@ public class Main{
         return Chegou;
     }
 
-    public static void PrintarDiagrama(Processo CPU, int tempo_atual, String tempString, String diagrama){
+    public static void PrintarDiagrama(Processo CPU, int tempo_atual){
         if(CPU == null){
             diagrama +=  cornull+ "xx |";
+            txtdiagrama += "xx |";
         }else{
             diagrama += CPU.cor + CPU + cornull+ " | ";
+            txtdiagrama += CPU + " | ";
         }
 
-        if(tempo_atual%10 == 0){
-            tempString += "0"+tempo_atual + " | ";
+        if(tempo_atual < 10){
+            tempdiag += "0"+tempo_atual + " | ";
         }else{
-            tempString += tempo_atual + " | ";
+            tempdiag += tempo_atual + " | ";
         }
-
+        System.out.println(tempdiag);
+        System.out.println(diagrama);
         
     }
 
-    public static void PrintTempoEspera(List<Processo> Finalizados){
+    public static void PrintTempoEspera(List<Processo> Finalizados, List<String> textos){
         int tot_temp = 0;
+        String frase = "\n";
         for (Processo processo : Finalizados) {
             tot_temp += processo.tempoEspera();
-            System.out.println("Tempo de Espera de "+processo+": "+processo.tempoEspera());
+            frase += "Tempo de Espera de "+processo+": "+processo.tempoEspera() + "\n";
         }
         // System.out.println("tam: "+Finalizados.size());
-        System.out.println("Tempo de Espera Médio: "+ (float)tot_temp/Finalizados.size());
+        frase += "Tempo de Espera Médio: "+ (float)tot_temp/Finalizados.size();
+        textos.add(frase);
+        System.out.println(frase);
     }
 
     public static void RoundRobin(int Quantum, int Quantum_Limite, Map<Integer, List<Processo> > DicProcess, List<Processo> Fila_CPU){
@@ -115,19 +124,18 @@ public class Main{
         boolean IOCPU=false;
         boolean rodando = true;
         Processo CPU = null;
-        // String tempdiag = "|";
-        // String diagrama = "|";
+        List<String> textos = new ArrayList<>();
         List<String> Eventos = new ArrayList<>();
         List<Processo> Chegadas = new ArrayList<>();
         List<Processo> Finalizados = new ArrayList<>();
 
-
-        System.out.println("***********************************\n" + //
+        textos.add("***********************************\n" + //
                         "***** ESCALONADOR ROUND ROBIN *****\n" + //
                         "-----------------------------------\n" + //
                         "------- INICIANDO SIMULACAO -------\n" + //
                         "-----------------------------------");
         
+        System.out.println(textos.get(0));
 
         while(rodando){
             Chegadas.clear();
@@ -199,14 +207,14 @@ public class Main{
             }
 
             //______ Prints______
+            textos.add("********** TEMPO "+tempo_atual+" **************");
             System.out.println("********** TEMPO "+tempo_atual+" **************");
             System.out.println("Quantum: "+Quantum);
-            Evento(Eventos);
+            Evento(Eventos, textos);
+            PrintarFila(Fila_CPU,textos);
+            PrintarCPU(CPU,textos);
 
-            PrintarFila(Fila_CPU);
-            PrintarCPU(CPU);
-
-            // PrintarDiagrama(CPU, tempo_atual, tempdiag, diagrama);
+            PrintarDiagrama(CPU, tempo_atual);
 
             //______Delay______
             try {
@@ -220,41 +228,57 @@ public class Main{
             //______Encerrando______
             if(Fila_CPU.size() == 0 && DicProcess.size() == 0 && CPU==null){
                 //fila vazia + processos vazios + CPU finalizada
-                System.err.println("-----------------------------------");
-                System.err.println("------- Encerrando simulacao ------");
-                System.err.println("-----------------------------------");
+                String fim = "-----------------------------------\n" +
+                             "------- Encerrando simulacao ------\n" + 
+                             "-----------------------------------";
+                textos.add(fim);
+                System.out.println(fim);
                 rodando = false;
                 break;
             }          
         }
         
-        PrintTempoEspera(Finalizados);
-        
+        PrintTempoEspera(Finalizados, textos);
+        textos.add("\n***********************************\n"+
+                   "******** DIAGRAMA DE GANTT ********\n"+
+                   "***********************************\n");
+        textos.add(tempdiag);
+
+        textos.add(txtdiagrama);
+
+        EscreveArq escritor = new EscreveArq(textos);
+        escritor.escrever();
+        // System.out.println(textos);
     }
 
-    public static void PrintarCPU(Processo CPU){
+    public static void PrintarCPU(Processo CPU, List<String> textos){
+        String frase;
         if(CPU == null){
-            System.out.println("ACABARAM OS PROCESSOS!!!");
+            frase = "ACABARAM OS PROCESSOS!!!";
         }else{
-            System.out.println("CPU: "+CPU+"("+CPU.getTempo_atual()+")");
-        }        
+            frase = "CPU: "+CPU+"("+CPU.getTempo_atual()+")";
+        }
+        textos.add(frase);
+        System.out.println(frase);        
     }
 
-    public static void PrintarFila(List<Processo> Fila){
-        System.out.print("FILA: ");
+    public static void PrintarFila(List<Processo> Fila, List<String> textos){
+        String frase = "FILA: ";
         if(Fila.size() == 0){
-            System.out.print("Não há processos na fila");
+            frase += "Não há processos na fila";
         }else{
             for (Processo processo : Fila) {
-                System.out.print(processo+"("+processo.getTempo_atual()+") ");
+                frase += processo+"("+processo.getTempo_atual()+") ";
             }
         }
-        System.out.println();
+        System.out.println(frase);
+        textos.add(frase);
     }
 
     
-    public static void Evento(List<String> Eventos){
+    public static void Evento(List<String> Eventos, List<String> textos){
         for (String evento : Eventos) {
+            textos.add("#[evento] "+ evento);
             System.out.println("#[evento] "+ evento);
         }
         
