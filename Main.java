@@ -13,7 +13,7 @@ import java.io.IOException;
 
 public class Main{
     
-    static String cores = "\033[0;40m \033[0;41m \033[0;42m \033[0;43m \033[0;44m \033[0;45m \033[0;46m \033[0;47m \033[1;40m \033[1;41m \033[1;42m \033[1;43m \033[1;44m \033[1;45m \033[1;46m \033[1;47m";
+    static String cores = "\033[0;40m \033[0;41m \033[0;42m \033[0;43m \033[0;44m \033[0;45m \033[0;47m \033[1;40m \033[1;41m \033[1;42m \033[1;43m \033[1;44m \033[1;45m \033[1;46m \033[1;47m";
     static List<String> listacor = List.of(cores.split(" "));
     static String cornull = "\033[0m";
     static String tempdiag = "| ";
@@ -42,9 +42,18 @@ public class Main{
                     Lista_IO.add(null);
                 }
                 
+                String cor;
+
+                if(i < listacor.size()){
+                    cor = listacor.get(i-1);
+                }else{
+                    int vezes = (i/listacor.size()) * listacor.size();
+                    // System.out.println("i: "+i+" vezes: "+ vezes);
+                    cor = listacor.get(i-vezes);
+                }
 
                 // Gerando Pocesso
-                Processo p = new Processo("P" + i, listacor.get(i-1), Integer.parseInt(partes[1]), Lista_IO, Integer.parseInt(partes[2]));
+                Processo p = new Processo("P" + i, cor, Integer.parseInt(partes[1]), Lista_IO, Integer.parseInt(partes[2]));
                 Lista.add(p);
             }
 
@@ -294,7 +303,7 @@ public class Main{
         Map<Integer, List<Processo>> Lista_Chegadas = new HashMap<>();
 
         //___ Leitura de Arquivo e Geração de Processos
-        Lista_Processos = LeitorArquivo("./prova.txt");
+        Lista_Processos = LeitorArquivo("./arquivos/q1.txt");
 
         //___ Gerando Lista de Chegadas ____
         Lista_Chegadas = GerarListaChegadas(Lista_Processos);
