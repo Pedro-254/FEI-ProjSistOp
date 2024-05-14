@@ -303,7 +303,7 @@ public class Main{
         Map<Integer, List<Processo>> Lista_Chegadas = new HashMap<>();
 
         //___ Leitura de Arquivo e Geração de Processos
-        Lista_Processos = LeitorArquivo("./arquivos/q1.txt");
+        Lista_Processos = LeitorArquivo("./arquivos/prova.txt");
 
         //___ Gerando Lista de Chegadas ____
         Lista_Chegadas = GerarListaChegadas(Lista_Processos);
