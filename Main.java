@@ -11,10 +11,14 @@ import java.io.BufferedReader;
 import java.io.FileReader;
 import java.io.IOException;
 
-import java.util.Collections;
-
 public class Main{
     
+    static String cores = "\033[0;40m \033[0;41m \033[0;42m \033[0;43m \033[0;44m \033[0;45m \033[0;47m \033[1;40m \033[1;41m \033[1;42m \033[1;43m \033[1;44m \033[1;45m \033[1;46m \033[1;47m";
+    static List<String> listacor = List.of(cores.split(" "));
+    static String cornull = "\033[0m";
+    static String tempdiag = "| ";
+    static String diagrama = "| ";
+    static String txtdiagrama = "| ";
 
     public static ArrayList<Processo> LeitorArquivo(String CaminhoArquivo){
         ArrayList<Processo> Lista = new ArrayList<>();
@@ -38,9 +42,18 @@ public class Main{
                     Lista_IO.add(null);
                 }
                 
-                
+                String cor;
+
+                if(i < listacor.size()){
+                    cor = listacor.get(i-1);
+                }else{
+                    int vezes = (i/listacor.size()) * listacor.size();
+                    // System.out.println("i: "+i+" vezes: "+ vezes);
+                    cor = listacor.get(i-vezes);
+                }
+
                 // Gerando Pocesso
-                Processo p = new Processo("P" + i, Integer.parseInt(partes[1]), Lista_IO, Integer.parseInt(partes[2]));
+                Processo p = new Processo("P" + i, cor, Integer.parseInt(partes[1]), Lista_IO, Integer.parseInt(partes[2]));
                 Lista.add(p);
             }
 
@@ -82,115 +95,202 @@ public class Main{
         return Chegou;
     }
 
+    public static void PrintarDiagrama(Processo CPU, int tempo_atual){
+        if(CPU == null){
+            diagrama +=  cornull+ "xx |";
+            txtdiagrama += "xx |";
+        }else{
+            diagrama += CPU.cor + CPU + cornull+ " | ";
+            txtdiagrama += CPU + " | ";
+        }
+
+        if(tempo_atual < 10){
+            tempdiag += "0"+tempo_atual + " | ";
+        }else{
+            tempdiag += tempo_atual + " | ";
+        }
+        System.out.println(tempdiag);
+        System.out.println(diagrama);
+        
+    }
+
+    public static void PrintTempoEspera(List<Processo> Finalizados, List<String> textos){
+        int tot_temp = 0;
+        String frase = "\n";
+        for (Processo processo : Finalizados) {
+            tot_temp += processo.tempoEspera();
+            frase += "Tempo de Espera de "+processo+": "+processo.tempoEspera() + "\n";
+        }
+        // System.out.println("tam: "+Finalizados.size());
+        frase += "Tempo de Espera Médio: "+ (float)tot_temp/Finalizados.size();
+        textos.add(frase);
+        System.out.println(frase);
+    }
+
     public static void RoundRobin(int Quantum, int Quantum_Limite, Map<Integer, List<Processo> > DicProcess, List<Processo> Fila_CPU){
+        int tempo_atual = 0;
         boolean estadoCPU=true;
         boolean IOCPU=false;
-        int tempo_atual = 0;
-        Processo CPU = Fila_CPU.get(0);
-        Fila_CPU.remove(0);
+        boolean rodando = true;
+        Processo CPU = null;
+        List<String> textos = new ArrayList<>();
+        List<String> Eventos = new ArrayList<>();
+        List<Processo> Chegadas = new ArrayList<>();
+        List<Processo> Finalizados = new ArrayList<>();
 
-        while(true){
-            System.out.println("********** TEMPO "+tempo_atual+" **************");
-            System.out.println("Quantum: "+Quantum);
-            if(DicProcess.containsKey(tempo_atual)){
-                //chegada de processo
-                for (Processo p : DicProcess.get(tempo_atual)) {
-                    Fila_CPU.add(p);
-                    Evento("CHEGADA <"+p+">");
-                }
-                DicProcess.remove(tempo_atual);
+        textos.add("***********************************\n" + //
+                        "***** ESCALONADOR ROUND ROBIN *****\n" + //
+                        "-----------------------------------\n" + //
+                        "------- INICIANDO SIMULACAO -------\n" + //
+                        "-----------------------------------");
+        
+        System.out.println(textos.get(0));
+
+        while(rodando){
+            Chegadas.clear();
+            Eventos.clear();
+
+
+
+            //________Rodando Processo_________
+            if (CPU != null) {
+                estadoCPU = CPU.AtualizarProcesso();
+                IOCPU = CPU.conferirIO();
+                Quantum++;
             }
-            if (Quantum == Quantum_Limite || !estadoCPU || IOCPU) {
-                //troca de processo ( quando o quantum acabar ou processo finalizar ou IO)
 
-                if(!estadoCPU){
-                    //processo finalizado
-                    Evento("ENCERRANDO <"+CPU+">");
-
+            
+            
+            //_________Troca de Processos_____________
+            if (Quantum == Quantum_Limite || !estadoCPU || IOCPU || CPU == null) {
+                
+                if (CPU == null) {
+                    
                 }
-                if(IOCPU){
-                    //processo com IO
-                    Evento("IO <"+CPU+">");
-                    Fila_CPU.add(CPU);
-                }
-                else{
+                else if (Quantum == Quantum_Limite) {
                     //fim do quantum
-                    if(estadoCPU){
-                        Evento("FIM QUANTUM <"+CPU+">");
+                    //if(estadoCPU == true){
+                        Eventos.add("FIM QUANTUM <"+CPU+">");
                         Fila_CPU.add(CPU);
-                    }
+                    //}
                     Quantum = 0;
+                }
+                else if(!estadoCPU){
+                    //processo finalizado
+                    Eventos.add("ENCERRANDO <"+CPU+">");
+                    Finalizados.add(CPU);
+                    Quantum = 0;
+                }
+                else if(IOCPU){
+                    //processo com IO
+                    Eventos.add("OPERAÇÃO I/O <"+CPU+">");
+                    Quantum = 0;
+                    Fila_CPU.add(CPU);
                 }
                 
                 if(Fila_CPU.size() != 0){
                     //fila contem processos e troca de processo
+                    if(tempo_atual != 0){
+                        CPU.addFim(tempo_atual);
+                    }
                     CPU = Fila_CPU.get(0);
                     Fila_CPU.remove(0);
+                    CPU.addInicio(tempo_atual);
                 }else{
-                    //fila vazia
+                    //fila vazia e CPU finalizado
                     if(!estadoCPU){
-                        //CPU com processo
                         CPU = null;
+                        Quantum = 0;
                     }
                 }
-            }else{
-                //continua com o mesmo processo
-                Quantum++;
             }
-            
-            PrintarFila(Fila_CPU);
-            PrintarCPU(CPU);
-            
-            if (CPU != null) {
-                estadoCPU = CPU.AtualizarProcesso();
-                IOCPU = CPU.conferirIO();
+            //__________Chegada de Processos____________
+            if(DicProcess.containsKey(tempo_atual)){
+                
+                for (Processo p : DicProcess.get(tempo_atual)) {
+                    Fila_CPU.add(p);
+                    Eventos.add("CHEGADA <"+p+">");
+                    
+                }
+                DicProcess.remove(tempo_atual);
             }
-            
-            if(Fila_CPU.size() == 0 && DicProcess.size() == 0 && CPU==null){
-                //fila vazia + processos vazios + CPU finalizada
-                break;
-            }
-            
-            tempo_atual++;
 
+            //______ Prints______
+            textos.add("********** TEMPO "+tempo_atual+" **************");
+            System.out.println("********** TEMPO "+tempo_atual+" **************");
+            System.out.println("Quantum: "+Quantum);
+            Evento(Eventos, textos);
+            PrintarFila(Fila_CPU,textos);
+            PrintarCPU(CPU,textos);
+
+            PrintarDiagrama(CPU, tempo_atual);
+
+            //______Delay______
             try {
                 Thread.sleep(1000);
             } catch (InterruptedException e) {
                 e.printStackTrace();
             }
-            
+
+            tempo_atual++;
+
+            //______Encerrando______
+            if(Fila_CPU.size() == 0 && DicProcess.size() == 0 && CPU==null){
+                //fila vazia + processos vazios + CPU finalizada
+                String fim = "-----------------------------------\n" +
+                             "------- Encerrando simulacao ------\n" + 
+                             "-----------------------------------";
+                textos.add(fim);
+                System.out.println(fim);
+                rodando = false;
+                break;
+            }          
         }
-        System.err.println("-----------------------------------");
-        System.err.println("------- Encerrando simulacao ------");
-        System.err.println("-----------------------------------");
-        //testar io
         
+        PrintTempoEspera(Finalizados, textos);
+        textos.add("\n***********************************\n"+
+                   "******** DIAGRAMA DE GANTT ********\n"+
+                   "***********************************\n");
+        textos.add(tempdiag);
+
+        textos.add(txtdiagrama);
+
+        EscreveArq escritor = new EscreveArq(textos);
+        escritor.escrever();
+        // System.out.println(textos);
     }
 
-    public static void PrintarCPU(Processo CPU){
+    public static void PrintarCPU(Processo CPU, List<String> textos){
+        String frase;
         if(CPU == null){
-            System.out.println("ACABARAM OS PROCESSOS!!!");
+            frase = "ACABARAM OS PROCESSOS!!!";
         }else{
-            System.out.println("CPU: "+CPU+"("+CPU.getTempo_atual()+")");
-        }        
+            frase = "CPU: "+CPU+"("+CPU.getTempo_atual()+")";
+        }
+        textos.add(frase);
+        System.out.println(frase);        
     }
 
-    public static void PrintarFila(List<Processo> Fila){
-        System.out.print("FILA: ");
+    public static void PrintarFila(List<Processo> Fila, List<String> textos){
+        String frase = "FILA: ";
         if(Fila.size() == 0){
-            System.out.print("Não há processos na fila");
+            frase += "Não há processos na fila";
         }else{
             for (Processo processo : Fila) {
-                System.out.print(processo+"("+processo.getTempo_atual()+") ");
+                frase += processo+"("+processo.getTempo_atual()+") ";
             }
         }
-        System.out.println();
+        System.out.println(frase);
+        textos.add(frase);
     }
 
-    // a função só printa o evento
-    // pensei em fazer um for para printar a lista de eventos
-    public static void Evento(String evento){
-        System.out.println("#[evento] "+ evento);
+    
+    public static void Evento(List<String> Eventos, List<String> textos){
+        for (String evento : Eventos) {
+            textos.add("#[evento] "+ evento);
+            System.out.println("#[evento] "+ evento);
+        }
+        
     }
 
     public static void main(String[] args) {
@@ -201,20 +301,13 @@ public class Main{
         List<Processo> Fila_CPU = new ArrayList<>();
         List<Processo> Lista_Processos = new ArrayList<>();
         Map<Integer, List<Processo>> Lista_Chegadas = new HashMap<>();
-        List<String> Lista_Eventos = new ArrayList<>();
+
         //___ Leitura de Arquivo e Geração de Processos
-        Lista_Processos = LeitorArquivo("./arquivo1.txt");
+        Lista_Processos = LeitorArquivo("./arquivos/prova.txt");
 
         //___ Gerando Lista de Chegadas ____
         Lista_Chegadas = GerarListaChegadas(Lista_Processos);
-        //___Lista para usar na conferencia de chegada de intens____
-        List<Integer> Lista_Chegadas_Sorted = new ArrayList<>();
 
-        for (Integer chave : Lista_Chegadas.keySet()) {
-            Lista_Chegadas_Sorted.add(chave);
-        }
-        Collections.sort(Lista_Chegadas_Sorted);
-        System.out.println(Fila_CPU.size());
         
         Fila_CPU = AddFila(Tempo_Atual, Lista_Chegadas);
 
